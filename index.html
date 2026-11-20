@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tournament Bracket</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <!-- Top Toolbar -->
+    <header class="toolbar" role="banner">
+      <div class="toolbar-group toolbar-brand">
+        <input
+          id="tournament-title"
+          class="title-input"
+          type="text"
+          value="Tournament Bracket"
+          aria-label="Tournament title"
+          spellcheck="false"
+        >
+        <span id="api-status-badge" class="status-pill" title="Character search source">MAL</span>
+      </div>
+
+      <div class="toolbar-group toolbar-controls">
+        <div class="segmented" role="group" aria-label="Bracket size">
+          <button type="button" class="seg-btn" data-size="4">4</button>
+          <button type="button" class="seg-btn active" data-size="8">8</button>
+          <button type="button" class="seg-btn" data-size="16">16</button>
+          <button type="button" class="seg-btn" data-size="32">32</button>
+        </div>
+
+        <div class="segmented" role="group" aria-label="Bracket layout">
+          <button type="button" class="seg-btn" data-layout="linear" title="Left-to-right layout">Linear</button>
+          <button type="button" class="seg-btn" data-layout="split" title="Two-sided symmetrical layout">Split</button>
+        </div>
+
+        <div class="toolbar-divider"></div>
+
+        <button type="button" id="btn-shuffle" class="tool-btn" title="Randomize Round 1 slots">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+          <span>Shuffle</span>
+        </button>
+
+        <button type="button" id="btn-undo" class="tool-btn" title="Undo last action (Ctrl+Z)" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+          <span>Undo</span>
+        </button>
+
+        <button type="button" id="btn-reset-results" class="tool-btn" title="Clear match results while keeping entrants">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+          <span>Reset</span>
+        </button>
+
+        <button type="button" id="btn-clear-all" class="tool-btn tool-btn-danger" title="Clear all slots and results">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+          <span>Clear</span>
+        </button>
+
+        <div class="toolbar-divider"></div>
+
+        <button type="button" id="btn-import" class="tool-btn" title="Import bracket JSON">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+          <span>Import</span>
+        </button>
+        <input type="file" id="file-import" accept=".json,application/json" hidden>
+
+        <button type="button" id="btn-export" class="tool-btn" title="Export bracket JSON">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+          <span>Export</span>
+        </button>
+      </div>
+
+      <div class="toolbar-group toolbar-view">
+        <div class="zoom-group" role="group" aria-label="Zoom controls">
+          <button type="button" id="btn-zoom-out" class="icon-btn" title="Zoom out">−</button>
+          <button type="button" id="btn-zoom-fit" class="icon-btn zoom-fit-btn" title="Fit bracket to screen">Fit</button>
+          <button type="button" id="btn-zoom-in" class="icon-btn" title="Zoom in">+</button>
+        </div>
+
+        <button type="button" id="btn-theme" class="icon-btn" title="Toggle light / dark theme" aria-label="Toggle theme">
+          <svg id="icon-theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+          <svg id="icon-theme-moon" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+
+        <button type="button" id="btn-fullscreen" class="icon-btn" title="Toggle fullscreen (F11)" aria-label="Toggle fullscreen">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Bracket Viewport -->
+    <main id="bracket-viewport" class="bracket-viewport" tabindex="0">
+      <div id="bracket-stage" class="bracket-stage">
+        <svg id="bracket-connectors" class="bracket-connectors" aria-hidden="true"></svg>
+        <div id="bracket-root" class="bracket-root"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Floating Autocomplete Portal (unclipped by bracket overflow) -->
+  <div id="autocomplete-portal" class="autocomplete-dropdown" role="listbox" hidden></div>
+
+  <!-- Hidden file input for optional custom local character image -->
+  <input type="file" id="custom-image-file" accept="image/*" hidden>
+
+  <!-- Fullscreen VS Stage Overlay -->
+  <div id="vs-overlay" class="vs-overlay" role="dialog" aria-modal="true" aria-label="Matchup selection" hidden>
+    <div class="vs-sides">
+      <button type="button" id="vs-side-left" class="vs-side vs-left" data-side="0">
+        <img class="vs-bg-blur" id="vs-left-blur" alt="" aria-hidden="true">
+        <img class="vs-portrait" id="vs-left-img" alt="">
+        <div class="vs-fallback-monogram" id="vs-left-monogram" hidden></div>
+        <div class="vs-scrim"></div>
+        <div class="vs-nameplate">
+          <div class="vs-char-name" id="vs-left-name"></div>
+          <div class="vs-char-sub" id="vs-left-sub"></div>
+        </div>
+        <div class="vs-pick-ring" aria-hidden="true"></div>
+      </button>
+
+      <button type="button" id="vs-side-right" class="vs-side vs-right" data-side="1">
+        <img class="vs-bg-blur" id="vs-right-blur" alt="" aria-hidden="true">
+        <img class="vs-portrait" id="vs-right-img" alt="">
+        <div class="vs-fallback-monogram" id="vs-right-monogram" hidden></div>
+        <div class="vs-scrim"></div>
+        <div class="vs-nameplate">
+          <div class="vs-char-name" id="vs-right-name"></div>
+          <div class="vs-char-sub" id="vs-right-sub"></div>
+        </div>
+        <div class="vs-pick-ring" aria-hidden="true"></div>
+      </button>
+    </div>
+
+    <!-- Real-time WebGL Flame Shader + Center Divider -->
+    <canvas id="vs-flame-canvas" class="vs-flame-canvas" aria-hidden="true"></canvas>
+
+    <!-- Center VS Emblem -->
+    <div class="vs-emblem" aria-hidden="true">
+      <span class="vs-emblem-text">VS</span>
+    </div>
+
+    <!-- Top Overlay Controls -->
+    <div class="vs-topbar">
+      <div class="vs-topbar-left">
+        <span id="vs-match-label" class="vs-match-label"></span>
+        <button type="button" id="vs-btn-fitmode" class="vs-ctrl-btn" title="Switch image framing between Fill and Fit">Fill</button>
+      </div>
+      <button type="button" id="vs-btn-close" class="vs-ctrl-btn vs-close-btn" title="Return to bracket without deciding (Esc)">
+        <span>Close</span>
+        <kbd>Esc</kbd>
+      </button>
+    </div>
+
+    <div class="vs-hint" aria-hidden="true">Click a side to advance · Esc to cancel</div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script defer src="js/api.js"></script>
+  <script defer src="js/shader.js"></script>
+  <script defer src="js/bracket.js"></script>
+  <script defer src="js/app.js"></script>
+</body>
+</html>
