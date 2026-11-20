@@ -29,7 +29,8 @@ Double-click **`launch.bat`** (Windows) or run **`./launch.sh`** (Linux/macOS).
 - If neither Python nor Node is installed, the launcher automatically opens `index.html` directly in the browser (which queries MyAnimeList via the Jikan v4 API, with an automatic fallback directory if Jikan is temporarily unavailable).
 
 ### Option 3: GitHub Pages
-Open the hosted GitHub Pages URL directly in any browser without downloading any files.
+Open the hosted URL directly in any browser without downloading any files:
+https://simplepotat.github.io/mal-tournament-bracket/
 
 ## Controls
 
